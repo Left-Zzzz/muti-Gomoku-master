@@ -1,2 +1,2 @@
-# os-project
-操作系统相关项目
+# muti-Gomoku-master
+多人五子棋对战小游戏
