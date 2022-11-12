@@ -1,4 +1,5 @@
 #include "common.h"
+#include "client_common.h"
 int isstart=0;
 FILE* logfd;//日志，暂时无效
 int main()
@@ -40,7 +41,15 @@ int main()
 		//printf("read pak ing...\n");
 		if((read(sock,pak,sizeof(MSGPAK)))<=0)
 		{
-			perror("读取服务器信息失败!错误信息：");
+            fprintf(stderr, "读取服务器信息失败！"); 
+            if(errno == EPIPE)
+            {
+               fprintf(stderr, "与服务器连接意外关闭！\n"); 
+            }
+            else
+            {
+			    perror("错误信息：");
+            }
 			exit(-1);
 		}
 		//读取数据包类型.
@@ -81,9 +90,11 @@ int main()
 			printf("%s",pak->message);
 			printf("现在是你的回合，可以开始下棋了(格式：x y （注意x和y之间有空格）)：\n");
 			scanf("%d %d",&x,&y);
-			if(x<0||x>=N||y<0||y>=N)
-				x=-1,y=-1;
-			send_pak(1,sock,x,y,'A',&msg);
+            // 清空读缓冲区
+            char ch;
+            while((ch = getchar()) != '\n' && ch != EOF);
+            printf("坐标：%d %d\n", x, y);
+			send_pak(1,sock,x,y,'A',msg);
 			//printf("sucess\n");
 		}
 		else if(pak->type==3)
@@ -93,6 +104,10 @@ int main()
 			printf("%s",pak->message);
 			break;
 		}
+        else
+        {
+            usleep(500);
+        }
 	}
 	fclose(logfd);
 	return 0;

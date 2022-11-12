@@ -1,4 +1,6 @@
 #include "common.h"
+#include "server_common.h"
+#include "handle_sigpipe.h"
 #include <semaphore.h>
 
 MSGPAK pak;
@@ -15,7 +17,10 @@ void init_table();
 FILE* logfd;
 int main()
 {
-	logfd=fopen("log.txt","w");
+    // 将SIGPIPE信号处理方式更改为不处理
+    handle_sigpipe();
+	
+    logfd=fopen("log.txt","w");
 	sem_init(&sem,0,1);
 	pthread_t thread_listen_net,thread_start_server;
 	cur_move_sock=-1,target_sock=0;
@@ -242,8 +247,8 @@ void* start_server(void* arg)
 		char msg[256]="";
 		cur_move_sock=-1;
 		while(actual_player<=1);
-		printf("请任意键开始游戏。\n");
-		scanf("%*s");
+		printf("请回车键开始游戏。\n");
+		scanf("%*c");
 		isstart=1;
 		sprintf(msg,"游戏开始！\n");
 		for(int i=0;i<CLIENT_NUM;i++)  //逐个发送游戏开始消息
@@ -265,9 +270,6 @@ void* start_server(void* arg)
 			cur_move_sock=t;
 			
 			sem_wait(&sem);//等待客户端旧的在线情况被刷新
-			sem_post(&sem);
-			usleep(500);
-			sem_wait(&sem);//等待客户端在线情况更新,避免write了一个关闭的fd导致程序退出
 			sem_post(&sem);
 			
 			if(actual_player<=1)
